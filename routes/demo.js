@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcryptjs");
 
 const db = require("../data/database");
 
@@ -24,11 +25,18 @@ router.post("/signup", async function (req, res) {
   // Since there's a - between confirm and email, we should write it like this.
   // (characters like - are prohibited in dot notation.)
   // We can also write userData.email like => userData["email"] to!
+  // 12 will define how strong is the encryption is.
   const enteredPassword = userData.password;
+
+  const hashedPassword = await bcrypt.hash(enteredPassword, 12);
+  // This will encrypt the Password entered by users so that hackers can't decrypt the
+  // passwords even if they breached security and stole them.
+  // We use a npm package called bcryptjs for that.
+  // But we can still verify the password by using this package in the future.
 
   const user = {
     email: enteredEmail,
-    password: enteredPassword,
+    password: hashedPassword,
   };
 
   await db.getDb().collection("users").insertOne(user);
