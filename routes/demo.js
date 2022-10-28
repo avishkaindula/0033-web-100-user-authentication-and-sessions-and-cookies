@@ -20,6 +20,7 @@ router.get("/login", function (req, res) {
 router.post("/signup", async function (req, res) {
   const userData = req.body;
   const enteredEmail = userData.email;
+  // userData['email']
   // .email is a name of an input bar we created on the signup.ejs template.
   const enteredConfirmEmail = userData["confirm-email"];
   // Since there's a - between confirm and email, we should write it like this.
@@ -27,6 +28,30 @@ router.post("/signup", async function (req, res) {
   // We can also write userData.email like => userData["email"] to!
   // 12 will define how strong is the encryption is.
   const enteredPassword = userData.password;
+
+  if (
+    !enteredEmail ||
+    !enteredConfirmEmail ||
+    !enteredPassword ||
+    enteredPassword.trim().length < 6 ||
+    // This will check whether the password is shorter than 6 characters or not.
+    // .trim() will exclude the spaces. So if the user enter 6 spaces, this still won't going to work.
+    enteredEmail !== enteredConfirmEmail ||
+    !enteredEmail.includes("@")
+  ) {
+    console.log("Incorrect data");
+    return res.redirect("/signup");
+  }
+
+  const existingUser = await db
+    .getDb()
+    .collection("users")
+    .findOne({ email: enteredEmail });
+
+  if (existingUser) {
+    console.log("User exists already");
+    return res.redirect("/signup");
+  }
 
   const hashedPassword = await bcrypt.hash(enteredPassword, 12);
   // This will encrypt the Password entered by users so that hackers can't decrypt the
