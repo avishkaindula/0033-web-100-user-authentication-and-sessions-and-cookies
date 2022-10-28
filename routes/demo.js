@@ -45,7 +45,36 @@ router.post("/signup", async function (req, res) {
   res.redirect("/login");
 });
 
-router.post("/login", async function (req, res) {});
+router.post("/login", async function (req, res) {
+  const userData = req.body;
+  const enteredEmail = userData.email;
+  const enteredPassword = userData.password;
+
+  const existingUser = await db
+    .getDb()
+    .collection("users")
+    .findOne({ email: enteredEmail });
+
+  if (!existingUser) {
+    console.log("Could not log in!");
+    return res.redirect("/login");
+  }
+
+  const passwordsAreEqual = await bcrypt.compare(
+    enteredPassword,
+    existingUser.password
+  );
+  // This is how we validate the password entered by the user.
+  // This will check for whether the hashed password (existingUser.password) matches the enteredPassword by the user.
+
+  if (!passwordsAreEqual) {
+    console.log("Could not log in - passwords are not equal!");
+    return res.redirect("/login");
+  }
+
+  console.log("User is authenticated!");
+  res.redirect("/admin");
+});
 
 router.get("/admin", function (req, res) {
   res.render("admin");
