@@ -97,8 +97,28 @@ router.post("/login", async function (req, res) {
     return res.redirect("/login");
   }
 
-  console.log("User is authenticated!");
-  res.redirect("/admin");
+  req.session.user = { id: existingUser._id, email: existingUser.email };
+  // This is how we add data to our session. (We don't store the password here though.)
+  // User is a brand new object created by us. We can assign data to that object like this.
+  // This data is used to check whether the user is authenticated for using admin page or not.
+  // .session is a property/object provided by the express-session package which manages the sessions for us.
+  // This data will be stored in the sessions collection of our MongoDB database.
+  // Whenever a response is sent express-session package will store this data automatically and assign a unique
+  // id for that session.
+  req.session.isAuthenticated = true;
+  // This is an extra information that we can add. But this data is not necessarily required. This data is also
+  // get stored in the database.
+  req.session.save(function () {
+    res.redirect("/admin");
+  });
+  // .session.save will force the data to be saved to the database before redirecting the user to the admin page.
+  // If we did't add the admin redirection inside this function, that redirection might occur before actually
+  // storing the data to the database as saving data to the database is an async task. This might lead to some problems.
+  // Therefor, we need to add this admin redirection inside the session.save as this will occur only after the data
+  // is saved to the database.
+
+  // Now we need to check this session in the routes that should be protected [router.get("/admin") route]
+  //  to find out whether access should be granted or not.
 });
 
 router.get("/admin", function (req, res) {
