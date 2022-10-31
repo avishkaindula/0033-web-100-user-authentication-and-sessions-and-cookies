@@ -123,7 +123,19 @@ router.post("/login", async function (req, res) {
 
 router.get("/admin", function (req, res) {
   // Check the user "ticket".
+  if (!req.session.isAuthenticated) {
+    return res.status(401).render("401");
+  }
+  // a session will only be created when a user successfully logs in.
+  // Therefor, we can control the access to the admin page like this.
+  // if req.session.isAuthenticated = false, then this will render the 401 not authenticated page instead of
+  // the admin page.
+  // A cookie will be created for this session and that cookie will be stored in the browser and the session will
+  // be recorded inside the sessions collection in the mongodb database.
+  // So as long as that cookie exists on the browser, we don't need to authenticate again.
+  // There will be an unique ID created for a specific session and that id is also stored inside the browser cookies.
   res.render("admin");
+  // if req.session.isAuthenticated = true, then this admin page gets rendered.
 });
 
 router.post("/logout", function (req, res) {});

@@ -51,8 +51,18 @@ app.use(
     // We can use a file storage for this to.
     // But it's better to use a database like MongoDB for this.
     // sessionStore the const we created above.
+
+    // cookie: {
+    //   maxAge: 30 * 24 * 60 * 60 * 1000
+    // }
+    // This is how we set an expiring time to an cookie.
+    // That expiring time is set on milliseconds => 1000 milliseconds = 1 minute
+    // If there's no expiring date is set, the cookie won't expire by default.
+    // But most browsers actually clear the cookie if the browser shuts down.
+    // But if we set maxAge on this session middleware, the browser will not delete the session cookies
+    // until that time is met.
   })
-);
+  );
 // This will generate a middleware function which is registered to the overall request funnel.
 // session in the const we created when importing express-session package.
 // We need to configure this middleware by adding a JS object inside that session and manipulating it's properties. 
