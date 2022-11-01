@@ -138,6 +138,20 @@ router.get("/admin", function (req, res) {
   // if req.session.isAuthenticated = true, then this admin page gets rendered.
 });
 
-router.post("/logout", function (req, res) {});
+router.post("/logout", function (req, res) {
+  req.session.user = null;
+  // null means to set this value to "false"
+  req.session.isAuthenticated = false;
+  // This will delete the .user and isAuthenticated objects from the session.
+  // But this won't delete the entire session.
+  // So other information like shopping cart can still rely on that session data and the cookie.
+  // So the session still exits on the database but user: and isAuthenticated: objects' values of  
+  // that object are set to null and false.
+  res.redirect("/");
+  // We don't need to wrap this content inside req.session.save as "/" don't rely on 
+  // authentication session data unlike the admin page.
+});
+// As .user and .isAuthenticated data are deleted when clicking logout, the user won't be able 
+// to reach the admin page until he logs in again.
 
 module.exports = router;
