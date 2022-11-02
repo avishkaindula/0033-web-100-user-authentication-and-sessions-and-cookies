@@ -10,7 +10,31 @@ router.get("/", function (req, res) {
 });
 
 router.get("/signup", function (req, res) {
-  res.render("signup");
+  let sessionInputData = req.session.inputData;
+  // This is how we access the session input data sent by the post signup route.
+
+  if (!sessionInputData) {
+    sessionInputData = {
+      hasError: false,
+      email: "",
+      confirmEmail: "",
+      password: "",
+    };
+  }
+  // This will set the sessionInputData values into "no values" if there's no
+  // session.inputData is sent by the signup post route.
+
+  req.session.inputData = null;
+  // We've stored the necessary session inputData we need inside the sessionData variable.
+  // So there's no need to keep those data inside the session still.
+  // Therefor we need to clear the inputData inside that session before redirecting to
+  // the signup page. If we don't do that, the inputData will remain inside the signup
+  // page even when we re-visit the signup page to create a fresh new user.
+  // This technique is also called flashing. Which means flashing a value onto a session
+  // just to have it for the next request after a redirect, and thereafter it's cleared again.
+
+  res.render("signup", { inputData: sessionInputData });
+  // We can create a inputData key like this and send those data to the signup.ejs file.
 });
 
 router.get("/login", function (req, res) {
@@ -39,8 +63,35 @@ router.post("/signup", async function (req, res) {
     enteredEmail !== enteredConfirmEmail ||
     !enteredEmail.includes("@")
   ) {
-    console.log("Incorrect data");
-    return res.redirect("/signup");
+    req.session.inputData = {
+      hasError: true,
+      message: "Invalid input - please check your data.",
+      email: enteredEmail,
+      confirmEmail: enteredConfirmEmail,
+      password: enteredPassword,
+    };
+    // We can save the invalid data typed by the user like this by creating a new
+    // .inputData object and then send them to the signup route.
+    // Then the user won't need to type all the data again after the page gets reloaded
+    // because the data he entered before is already present on the input felids of the page.
+    // Instead they will only be needed to updated the wrong inputs.
+
+    req.session.save(function () {
+      res.redirect("/signup");
+    });
+    return;
+    // We need to write the return keyword outside the save method.
+    // Because if we write the return method inside the save method, the code below
+    // will also get executed because that return will only be valid inside the .save function and
+    // if will not have any effect for the rest of the post signup route.
+    // As the signup get route relies on the .inputData, we need to wrap this inside a
+    // save method before redirecting to the signup page.
+
+    // return res.render("/signup");
+    // For post requests, we typically don't render pages like this.
+    // Instead we "redirect" to pages.
+    // But we can't assign data to a redirected page by using { inputData: sessionInputData } unlike
+    // rendering templates. Therefor, the data must be stored inside sessions instead.
   }
 
   const existingUser = await db
@@ -145,13 +196,13 @@ router.post("/logout", function (req, res) {
   // This will delete the .user and isAuthenticated objects from the session.
   // But this won't delete the entire session.
   // So other information like shopping cart can still rely on that session data and the cookie.
-  // So the session still exits on the database but user: and isAuthenticated: objects' values of  
+  // So the session still exits on the database but user: and isAuthenticated: objects' values of
   // that object are set to null and false.
   res.redirect("/");
-  // We don't need to wrap this content inside req.session.save as "/" don't rely on 
+  // We don't need to wrap this content inside req.session.save as "/" don't rely on
   // authentication session data unlike the admin page.
 });
-// As .user and .isAuthenticated data are deleted when clicking logout, the user won't be able 
+// As .user and .isAuthenticated data are deleted when clicking logout, the user won't be able
 // to reach the admin page until he logs in again.
 
 module.exports = router;
