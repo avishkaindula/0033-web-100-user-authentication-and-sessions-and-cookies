@@ -43,7 +43,7 @@ router.get("/login", function (req, res) {
 
 router.post("/signup", async function (req, res) {
   const userData = req.body;
-  const enteredEmail = userData.email;
+  const enteredEmail = userData.email; // userData['email']
   // userData['email']
   // .email is a name of an input bar we created on the signup.ejs template.
   const enteredConfirmEmail = userData["confirm-email"];
@@ -148,7 +148,18 @@ router.post("/login", async function (req, res) {
     return res.redirect("/login");
   }
 
-  req.session.user = { id: existingUser._id, email: existingUser.email };
+  req.session.user = {
+    id: existingUser._id,
+    email: existingUser.email,
+    // isAdmin: existingUser.isAdmin,
+    // The users how has the isAdmin tag on them has the value of isAdmin like this. => isAdmin: true.
+    // The users how has the isAdmin tag on them has the value of isAdmin like this. => isAdmin: undefined.
+    // We can add a isAdmin flag to the session and use that to find out whether the user gain access
+    // to the admin page or not. But if we ever want remove his admin status, we also need to remove
+    // the admin flag from his sessions. This is an extra work. So instead it's better to use a 
+    // mongoDB database query and extract whether the isAdmin object of that user's document is true or not and 
+    // use that data to grant access to the admin page.
+  };
   // This is how we add data to our session. (We don't store the password here though.)
   // User is a brand new object created by us. We can assign data to that object like this.
   // This data is used to check whether the user is authenticated for using admin page or not.
@@ -160,7 +171,7 @@ router.post("/login", async function (req, res) {
   // This is an extra information that we can add. But this data is not necessarily required. This data is also
   // get stored in the database.
   req.session.save(function () {
-    res.redirect("/admin");
+    res.redirect("/profile");
   });
   // .session.save will force the data to be saved to the database before redirecting the user to the admin page.
   // If we did't add the admin redirection inside this function, that redirection might occur before actually
@@ -172,7 +183,7 @@ router.post("/login", async function (req, res) {
   //  to find out whether access should be granted or not.
 });
 
-router.get("/admin", function (req, res) {
+router.get("/admin", async function (req, res) {
   // Check the user "ticket".
   if (!req.session.isAuthenticated) {
     return res.status(401).render("401");
@@ -185,8 +196,35 @@ router.get("/admin", function (req, res) {
   // be recorded inside the sessions collection in the mongodb database.
   // So as long as that cookie exists on the browser, we don't need to authenticate again.
   // There will be an unique ID created for a specific session and that id is also stored inside the browser cookies.
+
+  const user = await db
+    .getDb()
+    .collection("users")
+    .findOne({ _id: req.session.user.id });
+
+  if (!user || !user.isAdmin) {
+    res.status(403).render("403");
+  }
+  // This will render the 403 not authenticated template instead of the admin page if
+  // the user doesn't have the isAdmin = true flag inside his mongoDB user document.
+
   res.render("admin");
   // if req.session.isAuthenticated = true, then this admin page gets rendered.
+});
+
+router.get("/profile", function (req, res) {
+  if (!req.session.isAuthenticated) {
+    return res.status(401).render("401");
+  }
+  res.render("profile");
+  // The profile page can be viewed from any authenticated user.
+  // But unlike before, now only the users who has isAdmin = true in their 
+  // user document can access the admin page.
+  // We've assigned a isAdmin = true object manually to the newadmin@testing.com user and
+  // only he can access the admin page now. password newadmin@testing.com => 123456
+  // Other authenticated users can access the profile page but they cannot 
+  // access the admin page. Un-authenticated users can't access both admin and profile pages.
+
 });
 
 router.post("/logout", function (req, res) {
