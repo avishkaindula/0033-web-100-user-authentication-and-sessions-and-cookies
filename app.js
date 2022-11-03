@@ -67,6 +67,47 @@ app.use(
 // session in the const we created when importing express-session package.
 // We need to configure this middleware by adding a JS object inside that session and manipulating it's properties.
 
+app.use(async function (req, res, next) {
+  const user = req.session.user;
+  const isAuth = req.session.isAuthenticated;
+
+  if (!user || !isAuth) {
+    return next();
+    // next tells to move on to the next middleware or the route on the line.
+    // The next middleware on the line is app.use(demoRoutes); which is down below.
+  }
+  // This if condition will get executed if we have no users stored inside sessions.
+
+  const userDoc = await db
+    .getDb()
+    .collection("users")
+    .findOne({ _id: user.id });
+  const isAdmin = userDoc.isAdmin;
+
+  res.locals.isAuth = isAuth;
+  res.locals.isAdmin = isAdmin;
+  // We can use a special express feature to store the information we gathered here in a
+  // certain place which we can access from all our templates and routes without explicitly passing
+  // the data to them, and in all other parts and all other middle-wares that comes after
+  // this middleware. and that's the res.locals filed. Locals allows us to set some global
+  // values that will be available throughout this entire request response cycle.
+  // A new request will not have any of that previous request's data and a fresh new cycle
+  // will be executed for that new request.
+  // We can name the keys whatever we want. I've chose => .isAuth and .isAdmin as the keys.
+  // now .isAuth and isAdmin are global variables. We can use those variables in all our
+  // templates now. We don't need to pass this information into those templates explicitly.
+
+  next();
+});
+// This is how we create custom middle-wares.
+// We need custom middle-wares when we want to forward data that should be available for all
+// ejs templates and routes. It's because adding session data and other data manually to all 
+// templates and routes is annoying.
+// We need to add those middleware "after" the session-package initialization.
+// Now that we've created this middle-ware, we can use this data inside the header.ejs file.
+
+// We can use res.locals for anything we want and we can create custom middle-wares for anything we want.
+
 app.use(demoRoutes);
 
 app.use(function (error, req, res, next) {

@@ -2,15 +2,32 @@
   <nav>
     <ul>
       <li><a href="/">Home</a></li>
+
+      <% if (!locals.isAuth) { %>
       <li><a href="/signup">Signup</a></li>
       <li><a href="/login">Login</a></li>
+      <% } %> 
+      
+      <% if (locals.isAdmin) { %>
       <li><a href="/admin">Admin</a></li>
+      <% } %> 
+      <!-- Even if we manually typed http://localhost:3000/admin inside the address bar, the user still -->
+      <!-- Won't be able to reach that page if he is not authorized to look at that page because still  -->
+      <!-- the protection we've set to the admin page by using isAdmin = true flag inside admin get route of demo.js -->
+      <!-- still works as usual. -->
+      
+      <% if (locals.isAuth) { %>
+      <!-- This is a truthy condition. which means this if checks whether locals.isAuth = true or not. -->
+      <!-- Note that we don't use "res." before locals.isAuth in ejs files. -->
       <li><a href="/profile">Profile</a></li>
       <li>
         <form action="/logout" method="POST">
           <button>Logout</button>
         </form>
       </li>
+      <% } %>
+      <!-- Now this profile and logout items will only be executed if locals.isAuth = true -->
+      <!-- So the logout button and the profile buttons on the header section will only be shown if the user is authenticated. -->
     </ul>
   </nav>
 </header>

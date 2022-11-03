@@ -225,7 +225,11 @@ router.post("/login", async function (req, res) {
 
 router.get("/admin", async function (req, res) {
   // Check the user "ticket".
-  if (!req.session.isAuthenticated) {
+
+  // if (!req.session.isAuthenticated) {
+  // As we've created a custom middleware in app.js for res.locals, We can
+  // use res.locals instead of going inside the session and reach isAuthenticated.
+  if (!res.locals.isAuth) {
     return res.status(401).render("401");
   }
   // a session will only be created when a user successfully logs in.
@@ -237,13 +241,17 @@ router.get("/admin", async function (req, res) {
   // So as long as that cookie exists on the browser, we don't need to authenticate again.
   // There will be an unique ID created for a specific session and that id is also stored inside the browser cookies.
 
-  const user = await db
-    .getDb()
-    .collection("users")
-    .findOne({ _id: req.session.user.id });
+  // const user = await db
+  //   .getDb()
+  //   .collection("users")
+  //   .findOne({ _id: req.session.user.id });
+  // We don't need to fetch user here again as we've already fetched userData from the database and created
+  // .isAdmin locale inside the locals middleware on app.js file. 
 
-  if (!user || !user.isAdmin) {
-    res.status(403).render("403");
+  
+  // if (!user || !user.isAdmin) {
+  if (!res.locals.isAdmin) {
+    return res.status(403).render("403");
   }
   // This will render the 403 not authenticated template instead of the admin page if
   // the user doesn't have the isAdmin = true flag inside his mongoDB user document.
@@ -253,7 +261,8 @@ router.get("/admin", async function (req, res) {
 });
 
 router.get("/profile", function (req, res) {
-  if (!req.session.isAuthenticated) {
+  // if (!req.session.isAuthenticated) {
+  if (!res.locals.isAuth) {
     return res.status(401).render("401");
   }
   res.render("profile");
