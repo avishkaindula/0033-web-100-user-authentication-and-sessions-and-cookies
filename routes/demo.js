@@ -38,7 +38,18 @@ router.get("/signup", function (req, res) {
 });
 
 router.get("/login", function (req, res) {
-  res.render("login");
+  let sessionInputData = req.session.inputData;
+
+  if (!sessionInputData) {
+    sessionInputData = {
+      hasError: false,
+      email: "",
+      password: "",
+    };
+  }
+
+  req.session.inputData = null;
+  res.render("login", { inputData: sessionInputData });
 });
 
 router.post("/signup", async function (req, res) {
@@ -100,8 +111,17 @@ router.post("/signup", async function (req, res) {
     .findOne({ email: enteredEmail });
 
   if (existingUser) {
-    console.log("User exists already");
-    return res.redirect("/signup");
+    req.session.inputData = {
+      hasError: true,
+      message: "User exists already!",
+      email: enteredEmail,
+      confirmEmail: enteredConfirmEmail,
+      password: enteredPassword,
+    };
+    req.session.save(function () {
+      res.redirect("/signup");
+    });
+    return;
   }
 
   const hashedPassword = await bcrypt.hash(enteredPassword, 12);
@@ -132,8 +152,18 @@ router.post("/login", async function (req, res) {
     .findOne({ email: enteredEmail });
 
   if (!existingUser) {
-    console.log("Could not log in!");
-    return res.redirect("/login");
+    req.session.inputData = {
+      hasError: true,
+      message: "Could not log you in - please check your credentials!",
+      // We don't want to tell what went wrong, email or password.
+      // Because that would give a hint to malicious users.
+      email: enteredEmail,
+      password: enteredPassword,
+    };
+    req.session.save(function () {
+      res.redirect("/login");
+    });
+    return;
   }
 
   const passwordsAreEqual = await bcrypt.compare(
@@ -144,8 +174,18 @@ router.post("/login", async function (req, res) {
   // This will check for whether the hashed password (existingUser.password) matches the enteredPassword by the user.
 
   if (!passwordsAreEqual) {
-    console.log("Could not log in - passwords are not equal!");
-    return res.redirect("/login");
+    req.session.inputData = {
+      hasError: true,
+      message: "Could not log you in - please check your credentials!",
+      // We don't want to tell what went wrong, email or password.
+      // Because that would give a hint to malicious users.
+      email: enteredEmail,
+      password: enteredPassword,
+    };
+    req.session.save(function () {
+      res.redirect("/login");
+    });
+    return;
   }
 
   req.session.user = {
@@ -156,8 +196,8 @@ router.post("/login", async function (req, res) {
     // The users how has the isAdmin tag on them has the value of isAdmin like this. => isAdmin: undefined.
     // We can add a isAdmin flag to the session and use that to find out whether the user gain access
     // to the admin page or not. But if we ever want remove his admin status, we also need to remove
-    // the admin flag from his sessions. This is an extra work. So instead it's better to use a 
-    // mongoDB database query and extract whether the isAdmin object of that user's document is true or not and 
+    // the admin flag from his sessions. This is an extra work. So instead it's better to use a
+    // mongoDB database query and extract whether the isAdmin object of that user's document is true or not and
     // use that data to grant access to the admin page.
   };
   // This is how we add data to our session. (We don't store the password here though.)
@@ -218,13 +258,12 @@ router.get("/profile", function (req, res) {
   }
   res.render("profile");
   // The profile page can be viewed from any authenticated user.
-  // But unlike before, now only the users who has isAdmin = true in their 
+  // But unlike before, now only the users who has isAdmin = true in their
   // user document can access the admin page.
   // We've assigned a isAdmin = true object manually to the newadmin@testing.com user and
   // only he can access the admin page now. password newadmin@testing.com => 123456
-  // Other authenticated users can access the profile page but they cannot 
+  // Other authenticated users can access the profile page but they cannot
   // access the admin page. Un-authenticated users can't access both admin and profile pages.
-
 });
 
 router.post("/logout", function (req, res) {

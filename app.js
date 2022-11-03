@@ -5,7 +5,7 @@ const express = require("express");
 const session = require("express-session");
 // This is the package we use for sessions
 // Sessions are generated for each and every user and are generated for every incoming request.
-// This package will automatically manage the authentication cookies, so we don't need to use 
+// This package will automatically manage the authentication cookies, so we don't need to use
 // a third party cookie library like cookie-parser. We use third party cookie libraries when
 // we want to use cookies for other use cases.
 
@@ -16,7 +16,7 @@ const db = require("./data/database");
 const demoRoutes = require("./routes/demo");
 
 const MongoDBStore = mongodbStore(session);
-// This const MongoDBStore is actually a class (a constructor function) that we can execute 
+// This const MongoDBStore is actually a class (a constructor function) that we can execute
 // to create a new object based on this class blueprint.
 
 const app = express();
@@ -62,10 +62,10 @@ app.use(
     // But if we set maxAge on this session middleware, the browser will not delete the session cookies
     // until that time is met.
   })
-  );
+);
 // This will generate a middleware function which is registered to the overall request funnel.
 // session in the const we created when importing express-session package.
-// We need to configure this middleware by adding a JS object inside that session and manipulating it's properties. 
+// We need to configure this middleware by adding a JS object inside that session and manipulating it's properties.
 
 app.use(demoRoutes);
 
